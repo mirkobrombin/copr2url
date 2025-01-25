@@ -35,8 +35,6 @@ copr2url [repos.ini] [fedora-target] [--json]
    copr2url repos.ini fedora-41-x86_64 --json
    ```
 
-## Input Format
-
 ### INI File Example
 
 ```ini
