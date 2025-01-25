@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/mirkobrombin/copr2url/structs"
+	"github.com/mirkobrombin/copr2url/utils"
 	"golang.org/x/net/html"
 	"gopkg.in/ini.v1"
 )
@@ -41,12 +43,12 @@ func main() {
 		log.Fatalf("Cannot load ini: %v", err)
 	}
 
-	var repos []Repo
+	var repos []structs.Repo
 	for _, section := range cfg.Sections() {
 		if section.Name() == ini.DefaultSection {
 			continue
 		}
-		repos = append(repos, Repo{
+		repos = append(repos, structs.Repo{
 			Owner:   section.Key("owner").String(),
 			Project: section.Key("project").String(),
 			Package: section.Key("package").String(),
@@ -83,11 +85,11 @@ func main() {
 // getLatestSuccessBuild returns the most recent successful build ID for a given package.
 func getLatestSuccessBuild(owner, project, pkg string) int {
 	url := fmt.Sprintf("https://copr.fedorainfracloud.org/api_3/build/list?ownername=%s&projectname=%s", owner, project)
-	body, err := fetchBody(url)
+	body, err := utils.FetchBody(url)
 	if err != nil {
 		return 0
 	}
-	var resp BuildListResp
+	var resp structs.BuildListResp
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return 0
 	}
@@ -117,7 +119,7 @@ func getRpmFromListing(owner, project, pkg, fedoraTarget string, buildID int) st
 	// Building the directory URL
 	url := fmt.Sprintf("https://download.copr.fedorainfracloud.org/results/%s/%s/%s/0%d-%s/",
 		owner, project, fedoraTarget, buildID, pkg)
-	body, err := fetchBody(url)
+	body, err := utils.FetchBody(url)
 	if err != nil {
 		return ""
 	}
@@ -131,7 +133,7 @@ func getRpmFromListing(owner, project, pkg, fedoraTarget string, buildID int) st
 	var walk func(*html.Node)
 	walk = func(n *html.Node) {
 		if n.Type == html.ElementNode && n.Data == "a" {
-			h := attr(n, "href")
+			h := utils.Attr(n, "href")
 			if strings.HasSuffix(h, ".rpm") {
 				if strings.Contains(h, "debug") || strings.Contains(h, "src.rpm") {
 					return
